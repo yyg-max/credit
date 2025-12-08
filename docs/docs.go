@@ -15,6 +15,87 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api.php": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "act",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "key",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "out_trade_no",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "pid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "trade_no",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/payment.QueryMerchantOrderResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "parameters": [
+                    {
+                        "description": "退款请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/payment.RefundOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/payment.RefundMerchantOrderResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/system-configs": {
             "get": {
                 "produces": [
@@ -530,45 +611,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/merchant/payment/orders": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "payment"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Basic {ClientID}:{ClientSecret}",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "request body",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/payment.CreateOrderRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/util.ResponseAny"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/oauth/callback": {
             "post": {
                 "produces": [
@@ -904,6 +946,38 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/pay/submit.php": {
+            "post": {
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "parameters": [
+                    {
+                        "description": "request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/payment.CreateOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/util.ResponseAny"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -987,7 +1061,7 @@ const docTemplate = `{
             "required": [
                 "app_homepage_url",
                 "app_name",
-                "redirect_uri"
+                "notify_url"
             ],
             "properties": {
                 "app_description": {
@@ -1001,6 +1075,10 @@ const docTemplate = `{
                 "app_name": {
                     "type": "string",
                     "maxLength": 20
+                },
+                "notify_url": {
+                    "type": "string",
+                    "maxLength": 100
                 },
                 "redirect_uri": {
                     "type": "string",
@@ -1022,6 +1100,10 @@ const docTemplate = `{
                 "app_name": {
                     "type": "string",
                     "maxLength": 20
+                },
+                "notify_url": {
+                    "type": "string",
+                    "maxLength": 100
                 },
                 "redirect_uri": {
                     "type": "string",
@@ -1110,9 +1192,15 @@ const docTemplate = `{
                 "amount": {
                     "type": "number"
                 },
+                "merchant_order_no": {
+                    "type": "string"
+                },
                 "order_name": {
                     "type": "string",
                     "maxLength": 64
+                },
+                "payment_type": {
+                    "type": "string"
                 },
                 "remark": {
                     "type": "string",
@@ -1133,6 +1221,94 @@ const docTemplate = `{
                 "pay_key": {
                     "type": "string",
                     "maxLength": 10
+                }
+            }
+        },
+        "payment.QueryMerchantOrderResponse": {
+            "type": "object",
+            "properties": {
+                "addtime": {
+                    "type": "string",
+                    "example": "2023-12-08 12:00:00"
+                },
+                "code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "endtime": {
+                    "type": "string",
+                    "example": "2023-12-08 12:05:00"
+                },
+                "money": {
+                    "type": "string",
+                    "example": "10.00"
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "查询订单号成功！"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "商品名称"
+                },
+                "out_trade_no": {
+                    "type": "string",
+                    "example": "M202312080001"
+                },
+                "pid": {
+                    "type": "string",
+                    "example": "1001"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "trade_no": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "epay"
+                }
+            }
+        },
+        "payment.RefundMerchantOrderResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "msg": {
+                    "type": "string",
+                    "example": "退款成功"
+                }
+            }
+        },
+        "payment.RefundOrderRequest": {
+            "type": "object",
+            "required": [
+                "key",
+                "money",
+                "pid",
+                "trade_no"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "money": {
+                    "type": "number"
+                },
+                "out_trade_no": {
+                    "type": "string"
+                },
+                "pid": {
+                    "type": "string"
+                },
+                "trade_no": {
+                    "type": "integer"
                 }
             }
         },

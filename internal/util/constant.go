@@ -22,16 +22,11 @@
  * SOFTWARE.
  */
 
-package payment
+package util
 
 const (
-	APIKeyObjKey          = "payment_api_key_obj"
-	CreateOrderRequestKey = "payment_create_order_request"
-)
-
-const (
-	// OrderMerchantIDCacheKeyFormat Redis key 格式，用于存储订单号对应的商户ID
-	OrderMerchantIDCacheKeyFormat = "payment:order:%s"
-	// OrderExpireKeyFormat Redis key 格式，用于订单过期监听，key中包含订单ID
-	OrderExpireKeyFormat = "payment:order:expire:%d"
+	// PayTypeLDPay Linux Do Pay 支付类型标识
+	PayTypeLDPay = "ldpay"
+	// PayTypeEPay Epay 支付类型
+	PayTypeEPay = "epay"
 )

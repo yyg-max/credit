@@ -98,6 +98,13 @@ func Serve() {
 	// 补充中间件
 	r.Use(otelgin.Middleware(config.Config.App.AppName), loggerMiddleware())
 
+	// 支付接口
+	r.POST("/pay/submit.php", payment.RequireSignatureAuth(), payment.CreateMerchantOrder)
+	// 查询订单
+	r.GET("/api.php", payment.QueryMerchantOrder)
+	// 退款接口
+	r.POST("/api.php", payment.RefundMerchantOrder)
+
 	apiGroup := r.Group(config.Config.App.APIPrefix)
 	{
 		if config.Config.App.Env == "development" {
@@ -166,8 +173,7 @@ func Serve() {
 				// MerchantAPIKey Payment
 				MerchantPaymentRouter := merchantRouter.Group("/payment")
 				{
-					MerchantPaymentRouter.POST("/orders", payment.RequireMerchantAuth(), payment.CreateMerchantOrder)
-					MerchantPaymentRouter.GET("/order", oauth.LoginRequired(), payment.GetMerchantOrder)
+					MerchantPaymentRouter.GET("/order", oauth.LoginRequired(), payment.GetPaymentPageDetails)
 					MerchantPaymentRouter.POST("", oauth.LoginRequired(), payment.PayMerchantOrder)
 				}
 			}

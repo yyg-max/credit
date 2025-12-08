@@ -22,16 +22,22 @@
  * SOFTWARE.
  */
 
-package payment
+package util
 
-const (
-	APIKeyObjKey          = "payment_api_key_obj"
-	CreateOrderRequestKey = "payment_create_order_request"
-)
+import "github.com/gin-gonic/gin"
 
-const (
-	// OrderMerchantIDCacheKeyFormat Redis key 格式，用于存储订单号对应的商户ID
-	OrderMerchantIDCacheKeyFormat = "payment:order:%s"
-	// OrderExpireKeyFormat Redis key 格式，用于订单过期监听，key中包含订单ID
-	OrderExpireKeyFormat = "payment:order:expire:%d"
-)
+// GetFromContext 从上下文获取指定类型的值
+func GetFromContext[T any](c *gin.Context, key string) (T, bool) {
+	value, exists := c.Get(key)
+	if !exists {
+		var zero T
+		return zero, false
+	}
+	typed, ok := value.(T)
+	return typed, ok
+}
+
+// SetToContext 设置值到上下文
+func SetToContext[T any](c *gin.Context, key string, value T) {
+	c.Set(key, value)
+}
