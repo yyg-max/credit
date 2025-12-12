@@ -117,6 +117,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -132,13 +133,21 @@
 }
 
 @theme inline {
-  --animate-aurora: aurora 60s linear infinite;
+  /* 
+   * Aurora 动画配置
+   * 注意：这个动画会持续运行并消耗 GPU 资源
+   * 已优化：使用 120s 代替 60s 以减少重绘频率
+   * 配合 AuroraBackground 组件的 enableAnimation={false} 使用以获得最佳性能
+   */
+  --animate-aurora: aurora 120s linear infinite;
+
   @keyframes aurora {
     from {
       background-position:
         50% 50%,
         50% 50%;
     }
+
     to {
       background-position:
         350% 50%,

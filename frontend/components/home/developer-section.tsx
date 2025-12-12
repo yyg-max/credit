@@ -3,7 +3,6 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { GlassCard } from "@/app/page";
 
 export interface DeveloperSectionProps {
   className?: string;
@@ -25,7 +24,7 @@ export const DeveloperSection = React.memo(function DeveloperSection({ className
           transition={{ duration: 0.8 }}
           className="order-2 lg:order-1"
         >
-          <GlassCard className="p-0 overflow-hidden bg-[#1e1e1e] border-white/10 !bg-[#1e1e1e] transition-none hover:shadow-2xl cursor-default group">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1e1e1e] backdrop-blur-xl transition-all duration-300 hover:shadow-2xl cursor-default group">
             <div className="flex gap-2 p-3 lg:p-4 border-b border-white/10 bg-white/5">
               <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
               <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
@@ -35,10 +34,10 @@ export const DeveloperSection = React.memo(function DeveloperSection({ className
             <div className="p-4 lg:p-6 overflow-x-auto">
               <pre className="text-xs lg:text-sm font-mono text-neutral-300 leading-relaxed">
                 <code>
-                  <span className="text-purple-400">curl</span> <span className="text-green-400">https://pay.linux.do/api/v1/link/create</span> \{'\n'}
-                  {'  '}-X <span className="text-yellow-400">POST</span> \{'\n'}
-                  {'  '}-H <span className="text-yellow-400">&quot;Authorization: Bearer sk_live_...&quot;</span> \{'\n'}
-                  {'  '}-H <span className="text-yellow-400">&quot;Content-Type: application/json&quot;</span> \{'\n'}
+                  <span className="text-purple-400">curl</span> <span className="text-green-400">https://pay.linux.do/api/v1/link/create</span> {'\n'}
+                  {'  '}-X <span className="text-yellow-400">POST</span> {'\n'}
+                  {'  '}-H <span className="text-yellow-400">&quot;Authorization: Bearer sk_live_...&quot;</span> {'\n'}
+                  {'  '}-H <span className="text-yellow-400">&quot;Content-Type: application/json&quot;</span> {'\n'}
                   {'  '}-d <span className="text-blue-400">&apos;{'{'}</span>{'\n'}
                   {'    '}<span className="text-orange-400">&quot;product_name&quot;</span>: <span className="text-green-400">&quot;Premium Pro&quot;</span>,{'\n'}
                   {'    '}<span className="text-orange-400">&quot;amount&quot;</span>: <span className="text-blue-400">100.00</span>{'\n'}
@@ -46,7 +45,7 @@ export const DeveloperSection = React.memo(function DeveloperSection({ className
                 </code>
               </pre>
             </div>
-          </GlassCard>
+          </div>
         </motion.div>
 
         <div className="flex flex-col justify-center space-y-8 order-1 lg:order-2">

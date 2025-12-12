@@ -244,17 +244,16 @@ export function LoginPage() {
   )
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center font-sans bg-background selection:bg-primary/10 selection:text-primary">
-      <div className="absolute inset-0 z-0">
-        <AuroraBackground>
-          <div></div>
-        </AuroraBackground>
-      </div>
-
+    <AuroraBackground>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{
+          delay: 0.3,
+          duration: 0.8,
+          ease: "easeInOut",
+        }}
         className="relative z-10 w-full max-w-sm px-4"
       >
         <div className="text-center mb-8 space-y-2">
@@ -321,6 +320,6 @@ export function LoginPage() {
           &copy; {new Date().getFullYear()} LINUX DO PAY. 版权所有
         </div>
       </motion.div>
-    </div>
+    </AuroraBackground>
   )
 }

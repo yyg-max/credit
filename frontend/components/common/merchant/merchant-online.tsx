@@ -15,8 +15,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { useMerchant } from "@/contexts/merchant-context"
 import { MerchantService, type PaymentLink, type GetMerchantOrderResponse } from "@/lib/services"
-import { PayingInfo } from "@/components/pay/paying/paying-info"
-import { PayingNow } from "@/components/pay/paying/paying-now"
+import { PayingInfo } from "@/components/common/pay/paying/paying-info"
+import { PayingNow } from "@/components/common/pay/paying/paying-now"
 
 export function MerchantOnline() {
   const router = useRouter()
@@ -291,8 +291,8 @@ export function MerchantOnline() {
                   setIsCreating(false)
                 }}
                 className={`rounded-lg p-4 border border-dashed shadow-none transition-all text-left group bg-background min-h-[100px] w-[180px] shrink-0 flex flex-col justify-between ${ previewLink?.id === link.id
-                    ? "border-primary bg-primary/5"
-                    : "hover:border-primary/50"
+                  ? "border-primary bg-primary/5"
+                  : "hover:border-primary/50"
                   }`}
               >
                 <div className="flex items-start justify-between gap-2">

@@ -1,35 +1,17 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Area, AreaChart, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { ExternalLink, Info, Eye, EyeOff, RefreshCcw } from "lucide-react"
+import { Eye, EyeOff, RefreshCcw } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { DisputeService } from "@/lib/services"
+import { DisputeService, TransactionService } from "@/lib/services"
 import type { DisputeWithOrder, Order } from "@/lib/services"
 import { RefundReviewDialog, CancelDisputeDialog } from "@/components/common/general/table-data"
 import { CountingNumber } from '@/components/animate-ui/primitives/texts/counting-number'
 import { useDisputeData } from "@/hooks/use-dispute"
 import { DisputeDialog } from "@/components/common/home/dispute-dialog"
-
-const chartData = [
-  { date: "10-31", value: 0 },
-  { date: "11-01", value: 0 },
-  { date: "11-02", value: 0 },
-  { date: "11-03", value: 0 },
-  { date: "11-04", value: 0.01 },
-  { date: "11-05", value: 0 },
-  { date: "11-06", value: 0 },
-]
-
-const chartConfig = {
-  value: {
-    label: "数值",
-    color: "hsl(217, 91%, 60%)",
-  },
-} satisfies ChartConfig
-
+import { useRouter } from "next/navigation"
+import { Badge } from "@/components/ui/badge"
 
 /**
  * 创建争议订单对象
@@ -69,7 +51,7 @@ const DisputeListSkeleton = () => (
   <div className="space-y-1">
     {Array.from({ length: 5 }).map((_, index) => (
       <div
-        key={`skeleton-${index}`}
+        key={`skeleton-${ index }`}
         className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/30"
       >
         <div className="flex-1 min-w-0">
@@ -85,70 +67,59 @@ const DisputeListSkeleton = () => (
 )
 
 /**
- * 面积图卡片（总额和净交易额共用）
+ * 付款数据骨架屏
  */
-interface AreaChartCardProps {
-  /** 卡片标题 */
-  title: string
-  /** 卡片值 */
-  value: string
-  /** 渐变 ID */
-  gradientId: string
-  /** 是否显示更多按钮 */
-  showMoreButton?: boolean
-}
-
-const AreaChartCard: React.FC<AreaChartCardProps> = ({ title, value, gradientId, showMoreButton = false }) => (
-  <Card className="bg-background border-0 shadow-none rounded-lg min-h-[200px] flex flex-col h-full">
-    <CardHeader className="pb-2">
-      <div className="flex items-center gap-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Button variant="ghost" size="icon" className="h-4 w-4 p-0">
-          <Info className="size-4 text-muted-foreground" />
-        </Button>
+const PaymentListSkeleton = () => (
+  <div className="space-y-1">
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div
+        key={`payment-skeleton-${ index }`}
+        className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/30"
+      >
+        <div className="flex-1 min-w-0">
+          <Skeleton className="h-3 w-32 mb-1" />
+          <Skeleton className="h-2.5 w-20" />
+        </div>
+        <div className="flex items-center gap-1 ml-2">
+          <Skeleton className="h-5 w-16 rounded" />
+        </div>
       </div>
-      <div>
-        <p className="text-xl font-semibold">{value}</p>
-      </div>
-    </CardHeader>
-    <CardContent className="flex-1">
-      <ChartContainer config={chartConfig} className="h-[120px] w-full">
-        <AreaChart data={chartData} margin={{ left: 2, right: 2, top: 5, bottom: 5 }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="hsl(217, 91%, 60%)" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <XAxis dataKey="date" hide />
-          <YAxis hide />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-          <Area
-            dataKey="value"
-            type="monotone"
-            fill={`url(#${gradientId})`}
-            stroke="hsl(217, 91%, 60%)"
-            strokeWidth={2}
-          />
-        </AreaChart>
-      </ChartContainer>
-      <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 pt-2 border-t">
-        <span className="w-full text-center">所有时间</span>
-      </div>
-    </CardContent>
-    <CardFooter className="border-t h-8 items-end">
-      <div className="flex items-center justify-between text-xs text-muted-foreground w-full">
-        <span>更新时间：上午12:29</span>
-        {showMoreButton && (
-          <Button variant="link" className="px-0 h-4 text-xs text-blue-600">
-            查看更多
-          </Button>
-        )}
-      </div>
-    </CardFooter>
-  </Card>
+    ))}
+  </div>
 )
 
+/**
+ * 获取订单状态显示文本
+ */
+const getStatusText = (status: string) => {
+  const statusMap: Record<string, string> = {
+    success: '成功',
+    pending: '待支付',
+    failed: '失败',
+    expired: '已过期',
+    disputing: '争议中',
+    refund: '已退款',
+    refused: '已拒绝'
+  }
+  return statusMap[status] || status
+}
+
+/**
+ * 获取订单状态样式
+ */
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  switch (status) {
+    case 'success':
+      return 'default'
+    case 'pending':
+      return 'secondary'
+    case 'failed':
+    case 'refused':
+      return 'destructive'
+    default:
+      return 'outline'
+  }
+}
 
 /**
  * 付款卡片
@@ -156,47 +127,98 @@ const AreaChartCard: React.FC<AreaChartCardProps> = ({ title, value, gradientId,
  * 
  * @returns 付款卡片
  */
-function PaymentCard() {
+function PaymentCard({ onViewAll }: { onViewAll: () => void }) {
   const [isHidden, setIsHidden] = React.useState(false)
+  const [payments, setPayments] = React.useState<Order[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [total, setTotal] = React.useState(0)
+
+  const fetchPayments = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await TransactionService.getTransactions({
+        page: 1,
+        page_size: 10,
+        type: 'payment',
+        status: 'success'
+      })
+      setPayments(response.orders)
+      setTotal(response.total)
+    } catch (error) {
+      console.error('Failed to fetch payments:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchPayments()
+  }, [fetchPayments])
+
+  const handleRefresh = () => {
+    fetchPayments()
+  }
 
   return (
     <Card className="bg-background border-0 shadow-none rounded-lg min-h-[200px] flex flex-col h-full">
-      <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-sm font-medium">付款</CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-4 w-4 p-0"
-            onClick={() => setIsHidden(!isHidden)}
-          >
-            {isHidden ? (
-              <EyeOff className="h-3 w-3 text-muted-foreground" />
-            ) : (
-              <Eye className="h-3 w-3 text-muted-foreground" />
-            )}
-          </Button>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-4">
+            <CardTitle className="text-sm font-medium">付款</CardTitle>
+            <p className="font-semibold">{loading ? '-' : <CountingNumber number={total} decimalPlaces={0} />}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-4 w-4 p-0"
+              onClick={() => setIsHidden(!isHidden)}
+            >
+              {isHidden ? (
+                <EyeOff className="h-3 w-3 text-muted-foreground" />
+              ) : (
+                <Eye className="h-3 w-3 text-muted-foreground" />
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={handleRefresh}>
+              <RefreshCcw className="size-4 text-muted-foreground" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="relative flex-1">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between py-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-16" />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-20" />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-4 w-16" />
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-        </div>
+      <CardContent className="relative flex-1 -mt-4">
+        <ScrollArea className="h-46">
+          {loading ? (
+            <PaymentListSkeleton />
+          ) : payments.length > 0 ? (
+            <div className="space-y-1">
+              {payments.map((payment) => (
+                <div
+                  key={`payment-${ payment.id }`}
+                  className="flex items-center justify-between py-1 px-2 rounded-md bg-muted/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate leading-tight">
+                      {payment.order_name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground leading-tight">
+                      LDC {payment.amount}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 ml-2">
+                    <Badge variant={getStatusVariant(payment.status)} className="text-[10px] px-1.5 py-0">
+                      {getStatusText(payment.status)}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="h-46 flex items-center justify-center">
+              <p className="text-muted-foreground text-xs">暂无付款记录</p>
+            </div>
+          )}
+        </ScrollArea>
 
         {isHidden && (
           <div className="absolute inset-0 backdrop-blur-md bg-background/30 rounded-lg flex items-center justify-center">
@@ -204,9 +226,17 @@ function PaymentCard() {
           </div>
         )}
       </CardContent>
-      <CardFooter className="border-t h-8 items-end">
-        <div className="flex items-center justify-between text-xs text-muted-foreground w-full">
-          <span>更新时间：上午12:29</span>
+      <CardFooter className="h-8 items-end">
+        <div className="flex border-t pt-4 items-center justify-between text-xs text-muted-foreground w-full">
+          <span>更新时间：{new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+          <Button
+            variant="link"
+            className="px-0 h-4 text-xs text-blue-600"
+            disabled={loading}
+            onClick={onViewAll}
+          >
+            查看全部
+          </Button>
         </div>
       </CardFooter>
     </Card>
@@ -215,19 +245,166 @@ function PaymentCard() {
 
 /**
  * 总额卡片
- * 用于显示总额数据
+ * 用于显示总额数据（所有成功交易的总和）
  * 
  * @returns 总额卡片
  */
-const TotalCard = () => <AreaChartCard title="总额" value="LDC 100.00" gradientId="totalGradient" showMoreButton />
+function TotalCard() {
+  const [total, setTotal] = React.useState<number>(0)
+  const [loading, setLoading] = React.useState(true)
+
+  const fetchTotal = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await TransactionService.getTransactions({
+        page: 1,
+        page_size: 100,
+        status: 'success'
+      })
+
+      const totalAmount = response.orders.reduce((sum, order) => {
+        return sum + parseFloat(order.amount || '0')
+      }, 0)
+
+      setTotal(totalAmount)
+    } catch (error) {
+      console.error('Failed to fetch total:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchTotal()
+  }, [fetchTotal])
+
+  const handleRefresh = () => {
+    fetchTotal()
+  }
+
+  return (
+    <Card className="bg-background border-0 shadow-none rounded-lg min-h-[200px] flex flex-col h-full">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-medium">总额</CardTitle>
+          <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={handleRefresh}>
+            <RefreshCcw className="size-4 text-muted-foreground" />
+          </Button>
+        </div>
+        <div>
+          <div className="text-xl font-semibold">
+            {loading ? (
+              <Skeleton className="h-6 w-24" />
+            ) : (
+              <>LDC <CountingNumber number={total} decimalPlaces={2} /></>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1">
+        <div className="h-[120px] w-full flex items-center justify-center border border-dashed rounded-lg">
+          <p className="text-xs text-muted-foreground">图表暂时不可用</p>
+        </div>
+      </CardContent>
+      <CardFooter className="border-t h-8 items-end">
+        <div className="flex items-center justify-between text-xs text-muted-foreground w-full">
+          <span>更新时间：{new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      </CardFooter>
+    </Card>
+  )
+}
 
 /**
  * 净交易额卡片
- * 用于显示净交易额数据
+ * 用于显示净交易额数据（收款 - 付款）
  * 
  * @returns 净交易额卡片
  */
-const NetVolumeCard = () => <AreaChartCard title="净交易额" value="LDC 100.00" gradientId="netGradient" showMoreButton />
+function NetVolumeCard() {
+  const [netAmount, setNetAmount] = React.useState<number>(0)
+  const [loading, setLoading] = React.useState(true)
+
+  const fetchNetVolume = React.useCallback(async () => {
+    try {
+      setLoading(true)
+
+      /* 获取收款总额 */
+      const receiveResponse = await TransactionService.getTransactions({
+        page: 1,
+        page_size: 100,
+        type: 'receive',
+        status: 'success'
+      })
+
+      const receiveTotal = receiveResponse.orders.reduce((sum, order) => {
+        return sum + parseFloat(order.amount || '0')
+      }, 0)
+
+      /* 获取付款总额 */
+      const paymentResponse = await TransactionService.getTransactions({
+        page: 1,
+        page_size: 100,
+        type: 'payment',
+        status: 'success'
+      })
+
+      const paymentTotal = paymentResponse.orders.reduce((sum, order) => {
+        return sum + parseFloat(order.amount || '0')
+      }, 0)
+
+      /* 计算净交易额 */
+      setNetAmount(receiveTotal - paymentTotal)
+    } catch (error) {
+      console.error('Failed to fetch net volume:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchNetVolume()
+  }, [fetchNetVolume])
+
+  const handleRefresh = () => {
+    fetchNetVolume()
+  }
+
+  return (
+    <Card className="bg-background border-0 shadow-none rounded-lg min-h-[200px] flex flex-col h-full">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-medium">净交易额</CardTitle>
+          <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={handleRefresh}>
+            <RefreshCcw className="size-4 text-muted-foreground" />
+          </Button>
+        </div>
+        <div>
+          <div className="text-xl font-semibold">
+            {loading ? (
+              <Skeleton className="h-6 w-24" />
+            ) : (
+              <>
+                LDC <CountingNumber number={Math.abs(netAmount)} decimalPlaces={2} />
+                {netAmount < 0 && <span className="text-destructive ml-1">(赤字)</span>}
+              </>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1">
+        <div className="h-[120px] w-full flex items-center justify-center border border-dashed rounded-lg">
+          <p className="text-xs text-muted-foreground">图表暂时不可用</p>
+        </div>
+      </CardContent>
+      <CardFooter className="border-t h-8 items-end">
+        <div className="flex items-center justify-between text-xs text-muted-foreground w-full">
+          <span>更新时间：{new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      </CardFooter>
+    </Card>
+  )
+}
 
 /**
  * 支出最多的客户卡片
@@ -242,7 +419,7 @@ function TopCustomersCard() {
         <div className="flex items-start justify-between">
           <CardTitle className="text-sm font-medium">支出最多的客户</CardTitle>
           <Button variant="ghost" size="icon" className="h-4 w-4 p-0">
-            <ExternalLink className="size-4 text-muted-foreground" />
+            <RefreshCcw className="size-4 text-muted-foreground" />
           </Button>
         </div>
       </CardHeader>
@@ -294,7 +471,7 @@ function PendingDisputesCard({ onViewAll }: { onViewAll: () => void }) {
             <div className="space-y-1">
               {disputes.list.map((dispute) => (
                 <div
-                  key={`merchant-${dispute.id}`}
+                  key={`merchant-${ dispute.id }`}
                   className="flex items-center justify-between py-1 px-2 rounded-md bg-muted/30"
                 >
                   <div className="flex-1 min-w-0">
@@ -370,7 +547,7 @@ function MyDisputesCard({ onViewAll }: { onViewAll: () => void }) {
             <div className="space-y-1">
               {disputes.list.map((dispute) => (
                 <div
-                  key={`user-${dispute.id}`}
+                  key={`user-${ dispute.id }`}
                   className="flex items-center justify-between py-1 px-2 rounded-md bg-muted/30"
                 >
                   <div className="flex-1 min-w-0">
@@ -421,6 +598,7 @@ function MyDisputesCard({ onViewAll }: { onViewAll: () => void }) {
  * @returns 概览面板组件
  */
 export function OverviewPanel() {
+  const router = useRouter()
   const [disputeDialogOpen, setDisputeDialogOpen] = React.useState(false)
   const [disputeDialogMode, setDisputeDialogMode] = React.useState<'pending' | 'my-disputes'>('pending')
 
@@ -434,11 +612,15 @@ export function OverviewPanel() {
     setDisputeDialogOpen(true)
   }
 
+  const handleViewAllPayments = () => {
+    router.push('/trade?type=payment')
+  }
+
   return (
     <>
       <div className="bg-muted rounded-lg p-2 mt-2">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          <PaymentCard />
+          <PaymentCard onViewAll={handleViewAllPayments} />
           <TotalCard />
           <NetVolumeCard />
           <TopCustomersCard />

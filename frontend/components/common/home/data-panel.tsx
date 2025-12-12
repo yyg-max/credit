@@ -42,7 +42,7 @@ export function DataPanel() {
       <div className="grid grid-cols-3 gap-12">
         <div className="col-span-2">
           <h3 className="text-sm text-muted-foreground font-medium">总额</h3>
-          
+
           <ChartContainer config={chartConfig} className=" w-full h-[240px]">
             <AreaChart
               data={chartData}
@@ -92,7 +92,7 @@ export function DataPanel() {
             </AreaChart>
           </ChartContainer>
         </div>
-        
+
         <div className="col-span-1 flex flex-col">
           <div className="flex-1 border-b pb-4">
             <div className="text-sm text-muted-foreground font-medium">LINUX DO 积分</div>
@@ -100,7 +100,7 @@ export function DataPanel() {
               {loading ? '-' : <CountingNumber number={availableBalance} decimalPlaces={2} />}
             </div>
           </div>
-          
+
           <div className="flex-1 pt-4">
             <div className="text-sm text-muted-foreground font-medium">今日剩余额度</div>
             <div className="text-xl font-semibold pt-2">

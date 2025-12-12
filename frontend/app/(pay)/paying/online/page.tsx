@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { PayingOnline } from '@/components/pay/paying/paying-online'
+import { PayingOnline } from '@/components/common/pay/paying/paying-online'
 
 export default function PayingOnlinePage() {
   return (

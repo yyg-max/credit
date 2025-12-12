@@ -16,7 +16,7 @@ export function HomeMain() {
         </div>
 
         <div>
-          <h1 className="pb-2 text-2xl font-semibold border-b border-border">您的概览</h1>
+          <h1 className="pb-2 text-2xl font-semibold border-b border-border">近期概览</h1>
           <OverviewPanel />
         </div>
 
