@@ -54,10 +54,10 @@ func CheckDailyLimit(tx *gorm.DB, userID uint64, amount decimal.Decimal, dailyLi
 	// 统计当日成功支付的订单总金额
 	var todayTotalAmount decimal.Decimal
 	if err := tx.Model(&model.Order{}).
-		Where("payer_user_id = ? AND status = ? AND type = ? AND trade_time >= ? AND trade_time < ?",
+		Where("payer_user_id = ? AND status = ? AND type IN ? AND trade_time >= ? AND trade_time < ?",
 			userID,
 			model.OrderStatusSuccess,
-			model.OrderTypePayment,
+			[]model.OrderType{model.OrderTypePayment, model.OrderTypeOnline},
 			todayStart,
 			todayEnd).
 		Select("COALESCE(SUM(amount), 0)").
@@ -122,10 +122,10 @@ func GetTodayUsedAmount(db *gorm.DB, userID uint64) (decimal.Decimal, error) {
 
 	var todayTotalAmount decimal.Decimal
 	if err := db.Model(&model.Order{}).
-		Where("payer_user_id = ? AND status = ? AND type = ? AND trade_time >= ? AND trade_time < ?",
+		Where("payer_user_id = ? AND status = ? AND type IN ? AND trade_time >= ? AND trade_time < ?",
 			userID,
 			model.OrderStatusSuccess,
-			model.OrderTypePayment,
+			[]model.OrderType{model.OrderTypePayment, model.OrderTypeOnline},
 			todayStart,
 			todayEnd).
 		Select("COALESCE(SUM(amount), 0)").

@@ -26,18 +26,22 @@ package link
 
 import (
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	"github.com/linux-do/pay/internal/apps/merchant"
 	"github.com/linux-do/pay/internal/apps/oauth"
 	"github.com/linux-do/pay/internal/common"
 	"github.com/linux-do/pay/internal/db"
 	"github.com/linux-do/pay/internal/model"
 	"github.com/linux-do/pay/internal/service"
+	"github.com/linux-do/pay/internal/task"
+	"github.com/linux-do/pay/internal/task/schedule"
 	"github.com/linux-do/pay/internal/util"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -281,7 +285,7 @@ func PayByLink(c *gin.Context) {
 				ClientID:    merchantAPIKey.ClientID,
 				Amount:      paymentLink.Amount,
 				Status:      model.OrderStatusSuccess,
-				Type:        model.OrderTypePayment,
+				Type:        model.OrderTypeOnline,
 				Remark:      remark,
 				TradeTime:   time.Now(),
 				ExpiresAt:   time.Now(),
@@ -299,6 +303,19 @@ func PayByLink(c *gin.Context) {
 			merchantScoreIncrease := paymentLink.Amount.Mul(merchantPayConfig.ScoreRate).Round(0).IntPart()
 			if err := service.AddMerchantBalance(tx, merchantUser.ID, merchantAmount, merchantScoreIncrease); err != nil {
 				return err
+			}
+
+			notifyPayload, _ := json.Marshal(map[string]interface{}{
+				"order_id":  order.ID,
+				"client_id": merchantAPIKey.ClientID,
+			})
+			if _, errTask := schedule.AsynqClient.Enqueue(
+				asynq.NewTask(task.MerchantPaymentNotifyTask, notifyPayload),
+				asynq.Queue(task.QueueWebhook),
+				asynq.MaxRetry(5),
+				asynq.Timeout(30*time.Second),
+			); errTask != nil {
+				return fmt.Errorf("下发商户回调任务失败: %w", errTask)
 			}
 
 			return nil
