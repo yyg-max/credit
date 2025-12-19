@@ -286,6 +286,6 @@ docker run -d -p 8000:8000 linux-do-credit
 
 感谢所有为本项目做出贡献的开发者和 Linux Do 社区的支持！
 
-## 📈 Star History
+## 📈 项目趋势
 
 [![Star History Chart](https://api.star-history.com/svg?repos=linux-do/credit&type=Date)](https://star-history.com/#linux-do/credit&Date)
