@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 /**
- * Next.js 16 代理
  * 在渲染页面之前通过会话 cookie 执行快速身份验证检查
  *
  * 流程：
@@ -13,7 +12,9 @@ import type { NextRequest } from 'next/server'
  */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
-  const sessionCookie = request.cookies.get('linux_do_credit_session_id')
+
+  const sessionCookieName = process.env.LINUX_DO_CREDIT_SESSION_COOKIE_NAME || 'linux_do_credit_session_id'
+  const sessionCookie = request.cookies.get(sessionCookieName)
 
   /* 定义公共路由 */
   const publicRoutes = [
@@ -22,12 +23,12 @@ export function proxy(request: NextRequest) {
     '/callback',
     '/privacy',
     '/terms',
-    '/docs',
   ]
 
-  /* 定义公共路径前缀（易支付等外部接口） */
+  /* 定义公共路径前缀 */
   const publicPrefixes = [
-    '/epay/', // 易支付 API 兼容接口
+    '/docs/',  // 文档页面
+    '/epay/',  // 易支付 API 兼容接口
   ]
 
   /* 检查当前路径是否为公共路径 */
