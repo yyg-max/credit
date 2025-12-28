@@ -1,13 +1,9 @@
 "use client"
 
 import { useEffect } from "react"
-import { UserPayConfigs } from "@/components/common/admin/user-pay-configs"
-import { ErrorPage } from "@/components/layout/error"
-import { LoadingPage } from "@/components/layout/loading"
-
+import { UserPayConfigs } from "@/components/common/admin/credit"
 import { useUser } from "@/contexts/user-context"
 import { AdminProvider, useAdmin } from "@/contexts/admin-context"
-
 
 /* 用户积分配置页面 */
 export default function UserPayConfigPage() {
@@ -20,7 +16,7 @@ export default function UserPayConfigPage() {
 
 /* 用户积分配置页面内容 */
 function UserPayConfigPageContent() {
-  const { user, loading } = useUser()
+  const { user } = useUser()
   const { refetchUserPayConfigs } = useAdmin()
 
   useEffect(() => {
@@ -28,21 +24,6 @@ function UserPayConfigPageContent() {
       refetchUserPayConfigs()
     }
   }, [user?.is_admin, refetchUserPayConfigs])
-
-  /* 等待用户信息加载完成 */
-  if (loading) {
-    return <LoadingPage text="积分配置" badgeText="积分" />
-  }
-
-  /* 权限检查：只有管理员才能访问 */
-  if (!user?.is_admin) {
-    return (
-      <ErrorPage
-        title="访问被拒绝"
-        message="您没有权限访问此页面"
-      />
-    )
-  }
 
   return <UserPayConfigs />
 }
