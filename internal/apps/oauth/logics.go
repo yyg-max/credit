@@ -35,15 +35,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetUserIDFromSession(s sessions.Session) uint64 {
-	userID, ok := s.Get(UserIDKey).(uint64)
+func GetUserIDFromSession(s sessions.Session) int64 {
+	userID, ok := s.Get(UserIDKey).(int64)
 	if !ok {
 		return 0
 	}
 	return userID
 }
 
-func GetUserIDFromContext(c *gin.Context) uint64 {
+func GetUserIDFromContext(c *gin.Context) int64 {
 	session := sessions.Default(c)
 	return GetUserIDFromSession(session)
 }
@@ -111,6 +111,10 @@ func doOAuth(ctx context.Context, code string, nonce string) (*model.User, error
 	err = db.DB(ctx).Transaction(func(tx *gorm.DB) error {
 		var holder model.User
 		if conflictErr := tx.Where("username = ? AND id != ?", userInfo.Username, userInfo.GetID()).First(&holder).Error; conflictErr == nil {
+			// 负数 ID 均为公共账号，用户名由系统控制，不允许被释放
+			if holder.ID < 0 {
+				return fmt.Errorf("用户名 %s 已被公共账号占用", holder.Username)
+			}
 			// 用户名来自 OAuth 且可能被改名复用；冲突时只释放旧用户名，不禁用原账号。
 			newUsername := fmt.Sprintf("__released_username__:%d:%s", holder.ID, uuid.NewString())
 			if updateErr := tx.Model(&holder).Update("username", newUsername).Error; updateErr != nil {
