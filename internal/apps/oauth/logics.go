@@ -101,6 +101,13 @@ func doOAuth(ctx context.Context, code string, nonce string) (*model.User, error
 		}
 	}
 
+	// 负数 ID 为系统保留区间（公共账号），外部 OAuth 流程不允许产生
+	if userInfo.GetID() < 0 {
+		err = errors.New(InvalidOAuthUserID)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+
 	if !userInfo.Active {
 		err = errors.New(common.BannedAccount)
 		span.SetStatus(codes.Error, err.Error())

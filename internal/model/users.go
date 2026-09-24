@@ -56,7 +56,7 @@ const (
 
 // OAuthUserInfo 用户信息结构（同时支持 OIDC ID Token claims 和 UserEndpoint 响应）
 type OAuthUserInfo struct {
-	Id         uint64     `json:"id"`
+	Id         int64      `json:"id"`
 	Sub        string     `json:"sub"`
 	Username   string     `json:"username"`
 	Name       string     `json:"name"`
@@ -68,12 +68,12 @@ type OAuthUserInfo struct {
 // GetID 获取用户 ID
 func (u *OAuthUserInfo) GetID() int64 {
 	if u.Id != 0 {
-		return int64(u.Id)
+		return u.Id
 	}
 	// 从 sub 解析（OIDC 格式）
 	if u.Sub != "" {
-		if id, err := strconv.ParseUint(u.Sub, 10, 64); err == nil {
-			return int64(id)
+		if id, err := strconv.ParseInt(u.Sub, 10, 64); err == nil {
+			return id
 		}
 	}
 	return 0
